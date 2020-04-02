@@ -1,0 +1,153 @@
+---
+title: "Visualize data from [covidtracking.com](http://covidtracking.com)"
+author: "Dani Cosme"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    code_folding: hide
+    df_print: paged
+    highlight: tango
+    theme: united
+    toc: no
+    toc_float:
+      collapsed: yes
+      smooth_scroll: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+
+```{r, include = FALSE}
+# load packages
+if (!require(tidyverse)) {
+  install.packages('tidyverse')
+}
+```
+
+
+```{bash, include = FALSE}
+# pull data
+wget -O daily.csv http://covidtracking.com/api/states/daily.csv
+```
+
+
+```{r, include = FALSE}
+# load and tidy data
+data = read.csv("daily.csv", stringsAsFactors = FALSE) %>%
+  mutate(date = lubridate::ymd(date)) %>%
+  gather(var, val, contains("death"), contains("hospital"), contains("positive"), contains("negative")) %>%
+  mutate(var = gsub("Increase", "_change", var),
+         var = gsub("death", "deaths", var),
+         var = gsub("hospitalized", "hospitalizations", var),
+         var = gsub("positive", "positive_test_results", var),
+         var = gsub("negative", "negative_test_results", var)) %>%
+  spread(var, val)
+```
+
+# {.tabset}
+Here are plots of the current data for the number of deaths, hospitalizations, positive and negative tests for each state over time.
+
+The cumulative plots show the total number in each category, while the log plots show the rate of change in each category. The raw change plots show the daily  increase or decrease. 
+
+```{r}
+plot_covid = function(data, y) {
+  
+  p = data %>%
+    ggplot(aes_string("date", y, color = "state")) +
+    geom_line() +
+    scale_color_manual(values = wesanderson::wes_palette("Darjeeling1", 56, "continuous")) +
+    theme_minimal()
+  
+  if (grepl("change", y)) {
+    
+    str = gsub("_change", "", y)
+    p = p + labs(x = "\ndate", y = sprintf("change in number of %s\n", str))
+    
+  } else {
+    p = p + labs(x = "\ndate", y = sprintf("number of %s\n", gsub("_", " ", y)))
+  }
+    
+  
+  plotly::ggplotly(p)
+}
+
+plot_covid_log = function(data, y) {
+  
+  p = data %>%
+    mutate(y = log2(!!rlang::parse_quosure(y))) %>%
+    ggplot(aes(date, y, color = state)) +
+    geom_line() +
+    labs(x = "\ndate", y = sprintf("log2 number of %s\n", gsub("_", " ", y))) +
+    scale_color_manual(values = wesanderson::wes_palette("Darjeeling1", 56, "continuous")) +
+    theme_minimal()
+    
+  
+  plotly::ggplotly(p)
+}
+```
+
+## deaths {.tabset}
+### cumulative
+```{r}
+plot_covid(data, "deaths")
+```
+
+### log
+```{r}
+plot_covid_log(data, "deaths")
+```
+
+### raw change
+```{r}
+plot_covid(data, "deaths_change")
+```
+
+## hospitalizations {.tabset}
+### cumulative
+```{r}
+plot_covid(data, "hospitalizations")
+```
+
+### log
+```{r}
+plot_covid_log(data, "hospitalizations")
+```
+
+### raw change
+```{r}
+plot_covid(data, "hospitalizations_change")
+```
+
+## positive test results {.tabset}
+### cumulative
+```{r}
+plot_covid(data, "positive_test_results")
+```
+
+### log
+```{r}
+plot_covid_log(data, "positive_test_results")
+```
+
+### raw change
+```{r}
+plot_covid(data, "positive_test_results_change")
+```
+
+## negative test results {.tabset}
+### cumulative
+```{r}
+plot_covid(data, "negative_test_results")
+```
+
+### log
+```{r}
+plot_covid_log(data, "negative_test_results")
+```
+
+### raw change
+```{r}
+plot_covid(data, "negative_test_results_change")
+```
