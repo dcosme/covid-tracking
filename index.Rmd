@@ -46,19 +46,41 @@ data = read.csv("daily.csv", stringsAsFactors = FALSE) %>%
   spread(var, val)
 ```
 
-# {.tabset}
 Here are plots of the current data for the number of deaths, hospitalizations, positive and negative tests for each state over time.
 
 The cumulative plots show the total number in each category, while the log plots show the rate of change in each category. The raw change plots show the daily  increase or decrease. 
 
 ```{r}
-plot_covid = function(data, y) {
+plot_covid = function(data, y, state = TRUE) {
+  
+  if (isFALSE(state)) {
+    
+    data = data %>%
+      group_by(date) %>%
+      summarize(deaths = sum(deaths, na.rm = TRUE),
+                deaths_change = sum(deaths_change, na.rm = TRUE),
+                hospitalizations = sum(hospitalizations, na.rm = TRUE),
+                hospitalizations_change = sum(hospitalizations_change, na.rm = TRUE),
+                positive_test_results = sum(positive_test_results, na.rm = TRUE),
+                positive_test_results_change = sum(positive_test_results_change, na.rm = TRUE),
+                negative_test_results = sum(negative_test_results, na.rm = TRUE),
+                negative_test_results_change = sum(negative_test_results_change, na.rm = TRUE))
+    
+    p = data %>%
+    ggplot(aes_string("date", y)) +
+    geom_line(color = "#007EA7") +
+    geom_bar(stat = "identity", fill = "#007EA7", alpha = .5) +
+    scale_color_manual(values = wesanderson::wes_palette("Darjeeling1", 56, "continuous")) +
+    theme_minimal()
+    
+  } else {
   
   p = data %>%
     ggplot(aes_string("date", y, color = "state")) +
     geom_line() +
     scale_color_manual(values = wesanderson::wes_palette("Darjeeling1", 56, "continuous")) +
     theme_minimal()
+  }
   
   if (grepl("change", y)) {
     
@@ -73,7 +95,28 @@ plot_covid = function(data, y) {
   plotly::ggplotly(p)
 }
 
-plot_covid_log = function(data, y) {
+plot_covid_log = function(data, y, state = TRUE) {
+  
+  if (isFALSE(state)) {
+      data = data %>%
+      group_by(date) %>%
+      summarize(deaths = sum(deaths, na.rm = TRUE),
+                deaths_change = sum(deaths_change, na.rm = TRUE),
+                hospitalizations = sum(hospitalizations, na.rm = TRUE),
+                positive_test_results = sum(positive_test_results, na.rm = TRUE),
+                positive_test_results_change = sum(positive_test_results_change, na.rm = TRUE),
+                negative_test_results = sum(negative_test_results, na.rm = TRUE),
+                negative_test_results_change = sum(negative_test_results_change, na.rm = TRUE))
+    
+    p = data %>%
+    mutate(y = log2(!!rlang::parse_quosure(y))) %>%
+    ggplot(aes(date, y)) +
+    geom_line(color = "#007EA7") +
+    labs(x = "\ndate", y = sprintf("log2 number of %s\n", gsub("_", " ", y))) +
+    scale_color_manual(values = wesanderson::wes_palette("Darjeeling1", 56, "continuous")) +
+    theme_minimal()
+    
+  } else {
   
   p = data %>%
     mutate(y = log2(!!rlang::parse_quosure(y))) %>%
@@ -82,13 +125,81 @@ plot_covid_log = function(data, y) {
     labs(x = "\ndate", y = sprintf("log2 number of %s\n", gsub("_", " ", y))) +
     scale_color_manual(values = wesanderson::wes_palette("Darjeeling1", 56, "continuous")) +
     theme_minimal()
+  }
     
   
   plotly::ggplotly(p)
 }
 ```
 
-## deaths {.tabset}
+# For the US as a whole {.tabset}
+## deaths{.tabset}
+### cumulative
+```{r}
+plot_covid(data, "deaths", state = FALSE)
+```
+
+### log
+```{r}
+plot_covid_log(data, "deaths", state = FALSE)
+```
+
+### raw change
+```{r}
+plot_covid(data, "deaths_change", state = FALSE)
+```
+
+## hospitalizations {.tabset}
+### cumulative
+```{r}
+plot_covid(data, "hospitalizations", state = FALSE)
+```
+
+### log
+```{r}
+plot_covid_log(data, "hospitalizations", state = FALSE)
+```
+
+### raw change
+```{r}
+plot_covid(data, "hospitalizations_change", state = FALSE)
+```
+
+## positive test results {.tabset}
+### cumulative
+```{r}
+plot_covid(data, "positive_test_results", state = FALSE)
+```
+
+### log
+```{r}
+plot_covid_log(data, "positive_test_results", state = FALSE)
+```
+
+### raw change
+```{r}
+plot_covid(data, "positive_test_results_change", state = FALSE)
+```
+
+## negative test results {.tabset}
+### cumulative
+```{r}
+plot_covid(data, "negative_test_results", state = FALSE)
+```
+
+### log
+```{r}
+plot_covid_log(data, "negative_test_results", state = FALSE)
+```
+
+### raw change
+```{r}
+plot_covid(data, "negative_test_results_change", state = FALSE)
+```
+
+
+# By state {.tabset}
+## deaths{.tabset}
 ### cumulative
 ```{r}
 plot_covid(data, "deaths")
