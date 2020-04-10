@@ -46,7 +46,7 @@ data = read.csv("daily.csv", stringsAsFactors = FALSE) %>%
   spread(var, val)
 ```
 
-Here are plots of the current data for the number of deaths, hospitalizations, positive and negative tests for each state over time.
+Here are plots of the current data for the number of deaths, hospitalizations, positive and negative tests over time for the US as a whole and for each state separately.
 
 The cumulative plots show the total number in each category, while the log plots show the rate of change in each category. The raw change plots show the daily  increase or decrease. 
 
